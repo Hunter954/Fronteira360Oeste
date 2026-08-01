@@ -1,45 +1,7 @@
-{% extends "base.html" %}
-{% block title %} - Buscar{% endblock %}
-{% block content %}
-
-<div class="search-page-full">
-  <div>
-    <div class="section-head">
-      <h2>Buscar</h2>
-      <div class="section-line"></div>
-    </div>
-
-    <form class="search-row" action="{{ url_for('site.search') }}" method="get">
-      <input name="q" placeholder="Digite..." value="{{ term }}">
-      <button type="submit">Buscar</button>
-    </form>
-
-    <div class="recent-grid">
-      {% for p in pagination.items %}
-        <a class="recent-card" href="{{ url_for('site.post', slug=p.slug) }}">
-          <div class="recent-img" style="background-image:url('{{ p.featured_image or '' }}')"></div>
-          <div class="recent-body">
-            <div class="tag small">{{ (p.categories[0].name if p.categories else 'Notícias') }}</div>
-            <div class="recent-title">{{ p.title|safe }}</div>
-            <div class="meta">{{ p.published_at.strftime('%d %b, %Y') if p.published_at else '' }}</div>
-          </div>
-        </a>
-      {% endfor %}
-    </div>
-
-    <nav class="mt-4">
-      <ul class="pagination">
-        {% if pagination.has_prev %}
-          <li class="page-item"><a class="page-link" href="{{ url_for('site.search', q=term, page=pagination.prev_num) }}">Anterior</a></li>
-        {% endif %}
-        <li class="page-item disabled"><span class="page-link">Página {{ pagination.page }} / {{ pagination.pages }}</span></li>
-        {% if pagination.has_next %}
-          <li class="page-item"><a class="page-link" href="{{ url_for('site.search', q=term, page=pagination.next_num) }}">Próxima</a></li>
-        {% endif %}
-      </ul>
-    </nav>
-  </div>
-
-</div>
-
-{% endblock %}
+{% extends "base.html" %}{% block title %} - Buscar{% endblock %}{% block content %}
+<section class="listing-page">
+<header class="listing-header"><span>BUSCA</span><h1>Encontre uma notícia</h1><p>{% if term %}Resultados para “{{ term }}”.{% else %}Pesquise por assunto, cidade ou palavra-chave.{% endif %}</p></header>
+<form class="search-form-modern" action="{{ url_for('site.search') }}" method="get"><i class="bi bi-search"></i><input name="q" placeholder="O que você procura?" value="{{ term }}"><button>Buscar</button></form>
+{% if pagination.items %}<div class="story-list">{% for p in pagination.items %}<article class="story-row"><a class="story-row__image" href="{{ url_for('site.post',slug=p.slug) }}"><img src="{{ p.featured_image or '' }}" alt="{{ clean_text(p.title) }}"></a><div class="story-row__body"><div class="source-line"><span class="source-dot"></span>{{ p.author_name or 'Redação Fronteira 360' }} • {{ format_date_br(p.published_at) }}</div><h2><a href="{{ url_for('site.post',slug=p.slug) }}">{{ display_post_title(p,limit=120) }}</a></h2><p>{{ display_post_summary(p,limit=190) }}</p><small>{{ p.categories[0].name if p.categories else 'Notícias' }} • 4 min de leitura</small></div></article>{% endfor %}</div>{% else %}<div class="listing-empty">Nenhuma matéria encontrada.</div>{% endif %}
+{% if pagination.pages > 1 %}<nav class="listing-pagination">{% if pagination.has_prev %}<a href="{{ url_for('site.search',q=term,page=pagination.prev_num) }}">Anterior</a>{% endif %}<span>Página {{ pagination.page }} de {{ pagination.pages }}</span>{% if pagination.has_next %}<a href="{{ url_for('site.search',q=term,page=pagination.next_num) }}">Próxima</a>{% endif %}</nav>{% endif %}
+</section>{% endblock %}

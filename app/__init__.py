@@ -129,15 +129,15 @@ def _ensure_defaults():
 
     # Atualiza instalações antigas que ainda estejam com nomes do projeto anterior.
     legacy_values = {
-        "site_name": {"Portal Paraná Atual", "Foz do Iguaçu1000grau", "portalparanaatual"},
+        "site_name": {"Fronteira 360 Oeste", "Foz do Iguaçu1000grau", "portalparanaatual"},
         "footer_copyright_text": {"Todos os direitos reservados - 2009-2026 - PORTAL PARANÁ ATUAL", "Todos os direitos reservados - 2009-2026 - PORTALPARANAATUAL.COM.BR"},
     }
     site_name = SiteSetting.query.filter_by(key="site_name").first()
     if site_name and (not site_name.value or site_name.value in legacy_values["site_name"]):
-        site_name.value = os.getenv("SITE_NAME", "Portal Paraná Atual")
+        site_name.value = os.getenv("SITE_NAME", "Fronteira 360 Oeste")
     footer_copy = SiteSetting.query.filter_by(key="footer_copyright_text").first()
     if footer_copy and ("1000" in (footer_copy.value or "") or "STI" in (footer_copy.value or "").upper()):
-        footer_copy.value = "Todos os direitos reservados - Portal Paraná Atual"
+        footer_copy.value = "Todos os direitos reservados - Fronteira 360 Oeste"
 
     db.session.commit()
 

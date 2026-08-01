@@ -245,7 +245,7 @@ def _hub_config():
     return {
         'enabled': _setting_bool('hub_enabled', False),
         'site_key': (_setting('hub_site_key', '') or '').strip(),
-        'site_name': (_setting('site_name', current_app.config.get('SITE_NAME', 'Portal Paraná Atual')) or '').strip(),
+        'site_name': (_setting('site_name', current_app.config.get('SITE_NAME', 'Fronteira 360 Oeste')) or '').strip(),
         'receive_token': (_setting('hub_receive_token', '') or '').strip(),
         'auto_push': _setting_bool('hub_auto_push', True),
         'remotes': cleaned,
@@ -255,7 +255,7 @@ def _hub_config():
 def _serialize_post_for_hub(post: Post) -> dict:
     return {
         'site_key': (_setting('hub_site_key', '') or '').strip(),
-        'site_name': (_setting('site_name', current_app.config.get('SITE_NAME', 'Portal Paraná Atual')) or '').strip(),
+        'site_name': (_setting('site_name', current_app.config.get('SITE_NAME', 'Fronteira 360 Oeste')) or '').strip(),
         'post': {
             'title': post.title or '',
             'slug': post.slug or '',
@@ -868,7 +868,7 @@ def dashboard():
         slots=slots,
         live_embed=_setting("live_embed_html", ""),
         logo_url=_setting("logo_url", ""),
-        site_name=_setting("site_name", current_app.config.get("SITE_NAME", "Portal Paraná Atual")),
+        site_name=_setting("site_name", current_app.config.get("SITE_NAME", "Fronteira 360 Oeste")),
         media_files=media_files,
         **_common_admin_context("dashboard"),
     )
@@ -914,7 +914,7 @@ def insights_page():
         metric_label=allowed_metrics[selected_metric],
         metric_chart=metric_chart,
         allowed_metrics=allowed_metrics,
-        site_name=_setting("site_name", current_app.config.get("SITE_NAME", "Portal Paraná Atual")),
+        site_name=_setting("site_name", current_app.config.get("SITE_NAME", "Fronteira 360 Oeste")),
         logo_url=_setting("logo_url", ""),
         favicon_url=_setting("favicon_url", ""),
         default_share_image=_setting("default_share_image", ""),
@@ -1067,98 +1067,6 @@ def media_delete():
         flash('Arquivo inválido.', 'danger')
     return redirect(url_for('admin.media_library'))
 
-
-
-@admin_bp.route('/importar-parana-atual', methods=['GET', 'POST'])
-@login_required
-def importar_parana_atual():
-    r = _require_admin()
-    if r:
-        return r
-    from .parana_importer import BASE_URL, collect_links, parse_article, save_image_locally
-
-    preview_items = []
-    imported_items = []
-    errors = []
-    source_url = (request.form.get('source_url') or BASE_URL).strip() or BASE_URL
-    limit_raw = (request.form.get('limit') or '20').strip()
-    try:
-        limit = max(1, min(int(limit_raw), 100))
-    except Exception:
-        limit = 20
-    action = (request.form.get('action') or 'preview').strip().lower()
-
-    if request.method == 'POST':
-        try:
-            if '/noticia/' in source_url and source_url.endswith('.html'):
-                candidates = [type('Candidate', (), {'url': source_url, 'title': source_url})()]
-            else:
-                candidates = collect_links(source_url, limit=limit)
-            already = {row.source_url for row in Post.query.filter(Post.source_url.in_([c.url for c in candidates])).all() if row.source_url}
-            if action == 'preview':
-                preview_items = [{
-                    'url': c.url,
-                    'title': c.title or c.url,
-                    'exists': c.url in already,
-                } for c in candidates]
-                flash(f'{len(preview_items)} link(s) encontrado(s).', 'info')
-            else:
-                for c in candidates:
-                    try:
-                        data = parse_article(c.url)
-                        existing_post = Post.query.filter_by(source_url=c.url).first()
-                        slug = existing_post.slug if existing_post else _ensure_unique_slug(Post, data.get('slug') or data.get('title') or 'materia')
-                        image_local = ''
-                        if data.get('image_url'):
-                            try:
-                                image_local = save_image_locally(data['image_url'], slug)
-                            except Exception as img_exc:
-                                errors.append(f'Imagem não importada em {c.url}: {img_exc}')
-                        post = existing_post or Post(source='parana_atual_import', source_url=c.url, slug=slug)
-                        post.title = (data.get('title') or 'Matéria importada').strip()
-                        post.excerpt = (data.get('excerpt') or '').strip() or None
-                        post.content_html = (data.get('content_html') or '').strip() or None
-                        post.featured_image = image_local or post.featured_image or data.get('image_url') or None
-                        post.author_name = (data.get('author_name') or 'Portal Paraná Atual').strip()
-                        post.published_at = data.get('published_at') or post.published_at or datetime.utcnow()
-                        post.updated_at = datetime.utcnow()
-                        category_slug = (data.get('category_slug') or 'noticias').strip()
-                        category_name = (data.get('category_name') or 'Notícias').strip()
-                        category = Category.query.filter_by(slug=category_slug).first()
-                        if not category:
-                            category = Category(name=category_name, slug=category_slug)
-                            db.session.add(category)
-                            db.session.flush()
-                        else:
-                            category.name = category_name
-                        post.categories = [category]
-                        db.session.add(post)
-                        db.session.commit()
-                        already.add(c.url)
-                        imported_items.append({'url': c.url, 'title': post.title, 'status': 'Atualizada' if existing_post else 'Importada'})
-                    except Exception as exc:
-                        db.session.rollback()
-                        errors.append(f'Erro em {c.url}: {exc}')
-                flash(f'{sum(1 for item in imported_items if item["status"] == "Importada")} nova(s) e {sum(1 for item in imported_items if item["status"] == "Atualizada")} atualizada(s).', 'success')
-        except Exception as exc:
-            db.session.rollback()
-            errors.append(str(exc))
-            flash(f'Não foi possível concluir a importação: {exc}', 'danger')
-
-    import_stats = {
-        'imported_total': db.session.query(func.count(Post.id)).filter(Post.source == 'parana_atual_import').scalar() or 0,
-        'with_local_images': db.session.query(func.count(Post.id)).filter(Post.source == 'parana_atual_import', Post.featured_image.like('/media/%')).scalar() or 0,
-    }
-    return render_template(
-        'admin/import_parana_atual.html',
-        source_url=source_url,
-        limit=limit,
-        preview_items=preview_items,
-        imported_items=imported_items,
-        errors=errors,
-        import_stats=import_stats,
-        **_common_admin_context('import_parana_atual'),
-    )
 
 
 @admin_bp.get("/users")
@@ -1348,7 +1256,7 @@ def settings_page():
         logo_url=_setting("logo_url", ""),
         favicon_url=_setting("favicon_url", ""),
         default_share_image=_setting("default_share_image", ""),
-        site_name=_setting("site_name", current_app.config.get("SITE_NAME", "Portal Paraná Atual")),
+        site_name=_setting("site_name", current_app.config.get("SITE_NAME", "Fronteira 360 Oeste")),
         site_tagline=_setting("site_tagline", ""),
         default_meta_description=_setting("default_meta_description", ""),
         facebook_app_id=_setting("facebook_app_id", ""),
@@ -1448,7 +1356,7 @@ def save_logo():
     if share_file and getattr(share_file, "filename", ""):
         default_share_image = _save_upload(share_file, "branding")
 
-    _save_setting("site_name", (request.form.get("site_name", "") or "").strip() or current_app.config.get("SITE_NAME", "Portal Paraná Atual"))
+    _save_setting("site_name", (request.form.get("site_name", "") or "").strip() or current_app.config.get("SITE_NAME", "Fronteira 360 Oeste"))
     _save_setting("site_tagline", (request.form.get("site_tagline", "") or "").strip())
     _save_setting("default_meta_description", (request.form.get("default_meta_description", "") or "").strip())
     _save_setting("facebook_app_id", (request.form.get("facebook_app_id", "") or "").strip())

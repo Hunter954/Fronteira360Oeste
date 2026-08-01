@@ -14,7 +14,7 @@
 </head>
 <body>
 <header class="site-header">
-  <div class="utility"><div class="shell utility__inner"><span><i class="bi bi-cloud-sun"></i> Oeste do Paraná</span><div><a href="{{ footer_links.contact.url or '#' }}">Anuncie</a><a href="/admin/login">Painel</a>{% for key,link in social_links.items() %}{% if link %}<a href="{{ link }}" target="_blank" rel="noopener" aria-label="{{ key }}"><i class="bi bi-{{ 'twitter-x' if key=='x' else key }}"></i></a>{% endif %}{% endfor %}</div></div></div>
+  <div class="utility"><div class="shell utility__inner"><span><i class="bi bi-cloud-sun"></i> Oeste do Paraná</span><div><a href="{{ footer_links.contact.url or '#' }}">Anuncie</a>{% for key,link in social_links.items() %}{% if link %}<a href="{{ link }}" target="_blank" rel="noopener" aria-label="{{ key }}"><i class="bi bi-{{ 'twitter-x' if key=='x' else key }}"></i></a>{% endif %}{% endfor %}</div></div></div>
   <div class="shell brand-row"><a class="brand" href="{{ url_for('site.home') }}"><img src="{{ logo_url or url_for('static', filename='img/logo-fronteira360.svg') }}" alt="{{ site_name_value }}"></a><div class="header-ad">{{ ad_header|safe if ad_header else '<span>PUBLICIDADE • 728 × 90 px</span>'|safe }}</div></div>
   <nav class="main-nav"><div class="shell nav-inner"><button class="nav-toggle" type="button" aria-label="Abrir menu"><i class="bi bi-list"></i></button><div class="nav-links"><a href="{{ url_for('site.home') }}">Home</a>{% for cat in nav_categories[:9] %}<a href="{{ url_for('site.category', slug=cat.slug) }}">{{ cat.name }}</a>{% endfor %}</div><form action="{{ url_for('site.search') }}" method="get"><input name="q" placeholder="Buscar"><button aria-label="Buscar"><i class="bi bi-search"></i></button></form></div></nav>
 </header>
