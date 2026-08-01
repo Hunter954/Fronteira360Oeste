@@ -1,0 +1,60 @@
+{% extends 'admin/layout.html' %}
+{% block admin_title %}Publicidade{% endblock %}
+{% block page_title %}Editor visual de publicidade{% endblock %}
+{% block page_subtitle %}Gerencie todos os espaços de publicidade da home e das matérias internas, com as proporções exatas do novo layout.{% endblock %}
+{% block admin_content %}
+<section class="panel-card ads-guide-card">
+  <div class="ads-guide-grid">
+    <div><span class="ads-guide-step">1</span><strong>Escolha o espaço</strong><p>Clique exatamente no bloco que deseja alterar.</p></div>
+    <div><span class="ads-guide-step">2</span><strong>Envie a arte</strong><p>Use a medida mostrada para evitar cortes ou distorções.</p></div>
+    <div><span class="ads-guide-step">3</span><strong>Salve e confira</strong><p>O banner será exibido no mesmo local representado na prévia.</p></div>
+  </div>
+</section>
+
+<section class="ads-visual-layout">
+  <div class="panel-card ads-visual-canvas">
+    <div class="ads-visual-topline">
+      <div><h2>Mapa real dos anúncios</h2><p>A prévia abaixo replica a página inicial do portal.</p></div>
+      <a class="btn btn-outline-dark" href="{{ url_for('site.home') }}" target="_blank" rel="noopener">Ver site real</a>
+    </div>
+
+    <div class="ads-site-preview">
+      <div class="ads-site-preview__chrome">
+        <div class="ads-site-preview__topbar">Seja bem-vindo / Foz do Iguaçu <span>ANUNCIE NO FRONTEIRA 360 OESTE</span></div>
+        <div class="ads-site-preview__header"><div class="ads-site-preview__search"></div><div class="ads-site-preview__logo">FRONTEIRA <b>360 OESTE</b></div><div class="ads-site-preview__social">● ● ● ●</div></div>
+        <div class="ads-site-preview__nav">INÍCIO &nbsp; BRASIL &nbsp; CIDADE &nbsp; ECONOMIA &nbsp; EDUCAÇÃO &nbsp; ESPORTE &nbsp; POLICIAL &nbsp; POLÍTICA</div>
+      </div>
+
+      <div class="ads-home-preview">
+        <div class="ads-home-preview__content">
+          <div class="ads-home-preview__hero"><span></span><strong>Manchete principal publicada no portal</strong></div>
+          <div class="ads-home-preview__cards">{% for i in range(3) %}<div><span></span><small><b>OESTE E SUDOESTE</b>Título da matéria publicado no portal</small></div>{% endfor %}</div>
+          <strong class="ads-home-preview__section-title">CIDADE</strong>
+          <div class="ads-home-preview__cards">{% for i in range(3) %}<div><span></span><small><b>CIDADE</b>Título da matéria publicado no portal</small></div>{% endfor %}</div>
+        </div>
+        <div class="ads-home-preview__sidebar">
+          {% for key in ['header_top', 'home_top', 'home_bottom', 'home_mid', 'sidebar_1', 'sidebar_2'] %}
+            {% for item in slot_cards if item.slot.key == key %}
+            <a class="ads-preview-slot ads-preview-slot--{{ item.shape }}" href="{{ url_for('admin.ads_manage', slot_id=item.slot.id) }}">
+              <span class="ads-preview-badge">{{ item.label }}</span>
+              <div class="ads-preview-art {% if item.cover_image %}has-image{% endif %}">{% if item.cover_image %}<img src="{{ item.cover_image }}" alt="{{ item.label }}">{% else %}<strong>{{ item.label }}</strong><small>{{ item.dimensions }}</small>{% endif %}</div>
+              <div class="ads-preview-meta"><strong>{{ item.dimensions }}</strong><span>{{ item.banner_count }} banner(s)</span></div>
+            </a>
+            {% endfor %}
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="panel-card ads-slot-list-card">
+    <div class="panel-head"><div><h2>Espaços disponíveis</h2><p>Somente os locais que realmente existem no site.</p></div></div>
+    <div class="ads-slot-list">
+      {% for item in slot_cards %}
+      <a class="ads-slot-list-item" href="{{ url_for('admin.ads_manage', slot_id=item.slot.id) }}"><div><strong>{{ item.label }}</strong><small>{{ item.hint }} • {{ item.dimensions }}</small></div><span>{{ item.banner_count }} banner(s)</span></a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% block content %}
+{% set hero=lead_post %}{% set side=latest_queue %}
+<section class="section-title"><h2>Notícias em destaque</h2><span>Foz do Iguaçu • Oeste do Paraná • Tríplice Fronteira</span></section>
+<section class="lead-grid">
+  <div>
+  {% if hero %}<article class="hero-story"><a class="hero-image" href="{{ url_for('site.post',slug=hero.slug) }}" style="background-image:url('{{ hero.featured_image }}')"></a><div class="byline"><span class="avatar">{{ (hero.author_name or 'R')[0] }}</span><b>{{ hero.author_name or 'Redação Fronteira 360' }}</b><span>• {{ format_date_br(hero.published_at) }}</span></div><a href="{{ url_for('site.post',slug=hero.slug) }}"><h1>{{ display_post_title(hero,limit=110) }}</h1></a><p>{{ display_post_summary(hero,limit=180) }}</p><span class="meta-cat">{{ hero.categories[0].name if hero.categories else 'Notícias' }} • 3 min de leitura</span></article>{% endif %}
+  <div class="inline-ad">{{ ad_home_middle|safe if ad_home_middle else '<span>PUBLICIDADE • 728 × 180 px</span>'|safe }}</div>
+  </div>
+  <aside class="headline-list">
+    <div class="market"><div><small>Dólar comercial</small><strong>Consulte a cotação</strong></div><div><small>Tempo</small><strong>Foz do Iguaçu</strong></div></div>
+    {% for p in side %}<article><a href="{{ url_for('site.post',slug=p.slug) }}"><img src="{{ p.featured_image }}" alt=""><div><div class="source-line"><span class="source-dot"></span>{{ p.author_name or 'Fronteira 360' }} • agora</div><h3>{{ display_post_title(p,limit=72) }}</h3><small>{{ p.categories[0].name if p.categories else 'Notícias' }} • 3 min</small></div></a></article>{% endfor %}
+  </aside>
+</section>
+
+<section class="section-title section-title--row"><h2>Últimas notícias</h2><a href="{{ url_for('site.search') }}?q=">Ver todas <i class="bi bi-arrow-right"></i></a></section>
+<section class="latest-grid">{% for p in latest[4:8] %}<article class="news-card"><a href="{{ url_for('site.post',slug=p.slug) }}"><img src="{{ p.featured_image }}" alt=""><div class="source-line"><span class="source-dot"></span>{{ p.author_name or 'Fronteira 360' }} • recente</div><h3>{{ display_post_title(p,limit=78) }}</h3><p>{{ display_post_summary(p,limit=105) }}</p><small>{{ p.categories[0].name if p.categories else 'Notícias' }} • 4 min</small></a></article>{% endfor %}</section>
+<div class="wide-ad">{{ ad_home_bottom|safe if ad_home_bottom else '<span>PUBLICIDADE • 970 × 180 px</span>'|safe }}</div>
+
+{% if category_sections %}<section class="section-title section-title--row"><h2>Mais lidas</h2><a href="#">Ver todas <i class="bi bi-arrow-right"></i></a></section>
+{% set mixed=[] %}{% for section in category_sections %}{% for p in section.posts %}{% if mixed.append(p) %}{% endif %}{% endfor %}{% endfor %}
+<section class="must-grid">{% if mixed|length>0 %}<article class="must-small"><a href="{{ url_for('site.post',slug=mixed[0].slug) }}"><img src="{{ mixed[0].featured_image }}"><h3>{{ display_post_title(mixed[0],limit=72) }}</h3><p>{{ display_post_summary(mixed[0],limit=110) }}</p></a></article>{% endif %}{% if mixed|length>1 %}<article class="must-feature"><a href="{{ url_for('site.post',slug=mixed[1].slug) }}" style="background-image:url('{{ mixed[1].featured_image }}')"><div><h2>{{ display_post_title(mixed[1],limit=95) }}</h2><p>{{ display_post_summary(mixed[1],limit=130) }}</p></div></a></article>{% endif %}<div class="must-stack">{% for p in mixed[2:4] %}<article><a href="{{ url_for('site.post',slug=p.slug) }}"><img src="{{ p.featured_image }}"><div><h3>{{ display_post_title(p,limit=58) }}</h3><small>{{ p.categories[0].name if p.categories else 'Notícias' }} • 4 min</small></div></a></article>{% endfor %}</div></section>{% endif %}
+<section class="newsletter"><div><small>FIQUE BEM INFORMADO</small><h2>Receba as principais notícias da fronteira</h2></div><form><input type="email" placeholder="Seu melhor e-mail"><button type="button">Inscrever-se</button></form></section>
+{% endblock %}
