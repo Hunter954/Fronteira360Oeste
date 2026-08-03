@@ -39,3 +39,18 @@
   .footer-grid p{margin-left:auto;margin-right:auto}
   .footer-social{justify-content:center}
 }
+
+
+/* Tema claro e escuro */
+:root{color-scheme:light;--page:#ffffff;--surface:#ffffff;--surface-alt:#f6f6f6;--surface-soft:#f7f7f7;--field:#ffffff;--article:#28313a;--shadow:rgba(17,24,32,.04);--social-bg:#f4f4f4}
+:root[data-theme="dark"]{color-scheme:dark;--ink:#f2f5f7;--muted:#aab3bb;--line:#303840;--soft:#35281f;--page:#11161b;--surface:#171d23;--surface-alt:#1d242b;--surface-soft:#1d242b;--field:#202830;--article:#dce2e7;--shadow:rgba(0,0,0,.24);--social-bg:#242d35}
+html,body,.main-nav,.site-footer,.brand-row,.main-content{transition:background-color .22s ease,color .22s ease,border-color .22s ease}
+body{background:var(--page)}.main-nav,.site-footer{background:var(--surface)}
+.nav-inner input,.newsletter input,.search-form-modern input{background:var(--field);color:var(--ink)}
+.nav-inner input::placeholder,.newsletter input::placeholder,.search-form-modern input::placeholder{color:var(--muted)}
+.newsletter{background:var(--surface-alt)}.footer-social a{background:var(--social-bg)}.story-row__image img{background:var(--surface-alt)}.listing-empty{background:var(--surface-soft)}
+.search-form-modern{background:var(--surface);box-shadow:0 10px 30px var(--shadow)}.article-content{color:var(--article)}
+.theme-toggle{display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;color:#fff;font:inherit;cursor:pointer;padding:0;white-space:nowrap}.theme-toggle:hover{color:#ffb198}.theme-toggle i{font-size:12px}
+:root[data-theme="dark"] .brand img,:root[data-theme="dark"] .site-footer img{filter:brightness(0) invert(1)}
+:root[data-theme="dark"] .header-ad,:root[data-theme="dark"] .inline-ad,:root[data-theme="dark"] .wide-ad,:root[data-theme="dark"] .sidebar-ad{color:#d8ad7b}
+@media(max-width:620px){.utility__actions{gap:10px!important}.theme-toggle span{display:none}.theme-toggle i{font-size:14px}:root[data-theme="dark"] .nav-links{background:var(--surface)!important;border-color:var(--line)!important}}

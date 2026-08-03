@@ -1,4 +1,25 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const themeToggle = document.querySelector('.theme-toggle');
+  const root = document.documentElement;
+
+  const applyThemeButton = () => {
+    if (!themeToggle) return;
+    const isDark = root.dataset.theme === 'dark';
+    const icon = themeToggle.querySelector('i');
+    const label = themeToggle.querySelector('span');
+    themeToggle.setAttribute('aria-label', isDark ? 'Ativar tema claro' : 'Ativar tema escuro');
+    themeToggle.setAttribute('title', isDark ? 'Ativar tema claro' : 'Ativar tema escuro');
+    if (icon) icon.className = isDark ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
+    if (label) label.textContent = isDark ? 'Tema claro' : 'Tema escuro';
+  };
+
+  applyThemeButton();
+  themeToggle?.addEventListener('click', () => {
+    const nextTheme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    root.dataset.theme = nextTheme;
+    try { localStorage.setItem('fronteira-theme', nextTheme); } catch (error) {}
+    applyThemeButton();
+  });
   const menuButton = document.querySelector('.nav-toggle');
   const navLinks = document.querySelector('.nav-links');
 
@@ -13,8 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
       navLinks.style.flexDirection = 'column';
       navLinks.style.alignItems = 'flex-start';
       navLinks.style.padding = '18px';
-      navLinks.style.background = '#fff';
-      navLinks.style.borderBottom = '1px solid #e8ebee';
+      navLinks.style.background = 'var(--surface)';
+      navLinks.style.borderBottom = '1px solid var(--line)';
     });
   }
 
