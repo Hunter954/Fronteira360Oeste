@@ -1,8 +1,15 @@
-{% extends "base.html" %}{% block content %}
+{% extends "base.html" %}
+{% block mobile_market %}
+<div class="shell market market--mobile" aria-label="Cotação e temperatura atuais">
+  <div><small>Dólar comercial</small><strong data-dollar-value>Carregando...</strong></div>
+  <div><small>Tempo</small><strong data-weather-value>Foz do Iguaçu • --°C</strong></div>
+</div>
+{% endblock %}
+{% block content %}
 {% set hero=lead_post %}{% set side=latest_queue %}
 <section class="lead-heading-grid">
   <div class="section-title section-title--stack"><h2>Notícias em destaque</h2><span>Foz do Iguaçu • Oeste do Paraná • Tríplice Fronteira</span></div>
-  <div class="market"><div><small>Dólar comercial</small><strong>Consulte a cotação</strong></div><div><small>Tempo</small><strong>Foz do Iguaçu</strong></div></div>
+  <div class="market market--desktop" aria-label="Cotação e temperatura atuais"><div><small>Dólar comercial</small><strong data-dollar-value>Carregando...</strong></div><div><small>Tempo</small><strong data-weather-value>Foz do Iguaçu • --°C</strong></div></div>
 </section>
 <section class="lead-grid">
   <div>
