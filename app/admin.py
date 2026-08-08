@@ -4,11 +4,12 @@ import shutil
 import json
 import requests
 from datetime import datetime, timedelta, date, time
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from uuid import uuid4
 from urllib.parse import urlparse
 
-from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, abort
+from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, abort, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from sqlalchemy import func, desc, or_
 from werkzeug.utils import secure_filename
@@ -21,6 +22,20 @@ from .sync import sync_categories, sync_posts, localize_existing_wp_images
 from html import unescape
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+
+BRAZIL_TZ = ZoneInfo("America/Sao_Paulo")
+
+def _now_brazil():
+    return datetime.now(BRAZIL_TZ).replace(tzinfo=None)
+
+def _parse_schedule_datetime(raw):
+    value = (raw or "").strip()
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
 
 
 def _require_admin():
@@ -668,7 +683,6 @@ def _fill_post_form_from_obj(form: PostAdminForm, post: Post):
     form.title.data = post.title
     form.excerpt.data = post.excerpt
     form.content_html.data = post.content_html
-    form.featured_image.data = post.featured_image
     form.categories.data = [c.id for c in post.categories]
 
 
@@ -691,7 +705,7 @@ def posts_list():
         posts=posts,
         term=term,
         source=source,
-        now_utc=datetime.utcnow(),
+        now_brazil=_now_brazil(),
         **_common_admin_context('posts'),
     )
 
@@ -705,9 +719,7 @@ def posts_new():
     form = PostAdminForm()
     _bind_post_form_choices(form)
     if form.validate_on_submit():
-        image_url = (form.featured_image.data or '').strip()
-        if form.featured_image_file.data:
-            image_url = _save_upload(form.featured_image_file.data, 'posts')
+        image_url = _save_upload(form.featured_image_file.data, 'posts') if form.featured_image_file.data else ''
         action = (request.form.get('post_action') or 'publish').strip().lower()
         post = Post(
             source='local',
@@ -716,11 +728,17 @@ def posts_new():
             excerpt=(form.excerpt.data or '').strip() or None,
             content_html=(form.content_html.data or '').strip() or None,
             featured_image=image_url or None,
-            author_name='Anônimo',
-            updated_at=datetime.utcnow(),
+            author_name=(getattr(current_user, 'name', None) or current_user.email),
+            updated_at=_now_brazil(),
         )
         if action == 'publish':
-            post.published_at = datetime.utcnow()
+            post.published_at = _now_brazil()
+        elif action == 'schedule':
+            scheduled_at = _parse_schedule_datetime(request.form.get('scheduled_at'))
+            if not scheduled_at or scheduled_at <= _now_brazil():
+                flash('Escolha uma data e horário futuros para programar a matéria.', 'danger')
+                return render_template('admin/post_form.html', form=form, mode='new', post=None, hub=_hub_config(), now_brazil=_now_brazil(), **_common_admin_context('posts'))
+            post.published_at = scheduled_at
         else:
             post.published_at = None
         selected_ids = form.categories.data or []
@@ -730,7 +748,7 @@ def posts_new():
         db.session.commit()
         flash('Matéria criada com sucesso.', 'success')
         return redirect(url_for('admin.posts_edit', post_id=post.id))
-    return render_template('admin/post_form.html', form=form, mode='new', post=None, hub=_hub_config(), **_common_admin_context('posts'))
+    return render_template('admin/post_form.html', form=form, mode='new', post=None, hub=_hub_config(), now_brazil=_now_brazil(), **_common_admin_context('posts'))
 
 
 @admin_bp.route('/posts/<int:post_id>/edit', methods=['GET', 'POST'])
@@ -746,18 +764,26 @@ def posts_edit(post_id):
         _fill_post_form_from_obj(form, post)
     elif form.validate_on_submit():
         old_image = post.featured_image or ''
-        image_url = (form.featured_image.data or '').strip()
-        if form.featured_image_file.data:
-            image_url = _save_upload(form.featured_image_file.data, 'posts')
+        image_url = _save_upload(form.featured_image_file.data, 'posts') if form.featured_image_file.data else old_image
         post.title = (form.title.data or '').strip()
         post.slug = _ensure_unique_slug(Post, post.title or 'materia', object_id=post.id)
         post.excerpt = (form.excerpt.data or '').strip() or None
         post.content_html = (form.content_html.data or '').strip() or None
         post.featured_image = image_url or None
-        post.author_name = 'Anônimo'
-        post.updated_at = datetime.utcnow()
+        if not post.author_name or post.author_name.strip().lower() in {'anônimo', 'anonimo'}:
+            post.author_name = (getattr(current_user, 'name', None) or current_user.email)
+        post.updated_at = _now_brazil()
         action = (request.form.get('post_action') or 'publish').strip().lower()
-        post.published_at = datetime.utcnow() if action == 'publish' else None
+        if action == 'publish':
+            post.published_at = _now_brazil()
+        elif action == 'schedule':
+            scheduled_at = _parse_schedule_datetime(request.form.get('scheduled_at'))
+            if not scheduled_at or scheduled_at <= _now_brazil():
+                flash('Escolha uma data e horário futuros para programar a matéria.', 'danger')
+                return render_template('admin/post_form.html', form=form, mode='edit', post=post, hub=_hub_config(), now_brazil=_now_brazil(), **_common_admin_context('posts'))
+            post.published_at = scheduled_at
+        else:
+            post.published_at = None
         selected_ids = form.categories.data or []
         post.categories = Category.query.filter(Category.id.in_(selected_ids)).all() if selected_ids else []
         db.session.commit()
@@ -765,7 +791,7 @@ def posts_edit(post_id):
             _delete_local_media(old_image)
         flash('Matéria atualizada com sucesso.', 'success')
         return redirect(url_for('admin.posts_edit', post_id=post.id))
-    return render_template('admin/post_form.html', form=form, mode='edit', post=post, hub=_hub_config(), **_common_admin_context('posts'))
+    return render_template('admin/post_form.html', form=form, mode='edit', post=post, hub=_hub_config(), now_brazil=_now_brazil(), **_common_admin_context('posts'))
 
 
 @admin_bp.post('/posts/<int:post_id>/delete')
@@ -1053,6 +1079,22 @@ def media_upload():
     return redirect(url_for('admin.media_library'))
 
 
+@admin_bp.post('/media/editor-upload')
+@login_required
+def media_editor_upload():
+    r = _require_admin()
+    if r:
+        return r
+    upload = request.files.get('file')
+    if not upload or not getattr(upload, 'filename', ''):
+        return jsonify({'ok': False, 'error': 'Selecione uma imagem.'}), 400
+    ext = Path(upload.filename).suffix.lower().lstrip('.')
+    if ext not in {'jpg', 'jpeg', 'png', 'webp', 'gif'}:
+        return jsonify({'ok': False, 'error': 'Formato de imagem inválido.'}), 400
+    url = _save_upload(upload, 'posts/content')
+    return jsonify({'ok': True, 'url': url})
+
+
 @admin_bp.post('/media/delete')
 @login_required
 def media_delete():
@@ -1078,7 +1120,7 @@ def users_list():
     term = (request.args.get('q') or '').strip()
     q = User.query
     if term:
-        q = q.filter(User.email.ilike(f"%{term}%"))
+        q = q.filter(or_(User.email.ilike(f"%{term}%"), User.name.ilike(f"%{term}%")))
     users = q.order_by(User.is_admin.desc(), User.email.asc()).all()
     return render_template(
         'admin/users_list.html',
@@ -1097,19 +1139,22 @@ def users_new():
         return r
     user_obj = None
     if request.method == 'POST':
+        name = (request.form.get('name') or '').strip()
         email = (request.form.get('email') or '').strip().lower()
         password = request.form.get('password') or ''
         is_admin = bool(request.form.get('is_admin'))
         is_active = bool(request.form.get('is_active'))
 
-        if not email:
+        if not name:
+            flash('Informe o nome do usuário.', 'danger')
+        elif not email:
             flash('Informe o e-mail do usuário.', 'danger')
         elif len(password) < 4:
             flash('A senha precisa ter pelo menos 4 caracteres.', 'danger')
         elif User.query.filter_by(email=email).first():
             flash('Já existe um usuário com esse e-mail.', 'danger')
         else:
-            user_obj = User(email=email, is_admin=is_admin, is_active=is_active)
+            user_obj = User(name=name, email=email, is_admin=is_admin, is_active=is_active)
             user_obj.set_password(password)
             db.session.add(user_obj)
             db.session.commit()
@@ -1127,12 +1172,15 @@ def users_edit(user_id):
         return r
     user_obj = User.query.get_or_404(user_id)
     if request.method == 'POST':
+        name = (request.form.get('name') or '').strip()
         email = (request.form.get('email') or '').strip().lower()
         password = request.form.get('password') or ''
         is_admin = bool(request.form.get('is_admin'))
         is_active = bool(request.form.get('is_active'))
 
-        if not email:
+        if not name:
+            flash('Informe o nome do usuário.', 'danger')
+        elif not email:
             flash('Informe o e-mail do usuário.', 'danger')
         elif User.query.filter(User.email == email, User.id != user_obj.id).first():
             flash('Já existe outro usuário com esse e-mail.', 'danger')
@@ -1141,6 +1189,7 @@ def users_edit(user_id):
         elif user_obj.id == current_user.id and not is_active:
             flash('Você não pode desativar seu próprio usuário.', 'danger')
         else:
+            user_obj.name = name
             user_obj.email = email
             user_obj.is_admin = is_admin
             user_obj.is_active = is_active
@@ -1334,6 +1383,26 @@ def save_footer_social():
     return redirect(url_for("admin.footer_social_page"))
 
 
+@admin_bp.post("/settings/identity")
+@login_required
+def save_identity():
+    r = _require_admin()
+    if r:
+        return r
+    old_logo = _setting("logo_url", "")
+    logo_url = old_logo
+    logo_file = request.files.get("logo_file")
+    if logo_file and getattr(logo_file, "filename", ""):
+        logo_url = _save_upload(logo_file, "branding")
+    _save_setting("site_name", (request.form.get("site_name", "") or "").strip() or current_app.config.get("SITE_NAME", "Fronteira 360 Oeste"))
+    _save_setting("logo_url", logo_url)
+    db.session.commit()
+    if logo_file and old_logo and old_logo != logo_url:
+        _delete_local_media(old_logo)
+    flash("Identidade do portal atualizada com sucesso.", "success")
+    return redirect(url_for("admin.dashboard"))
+
+
 @admin_bp.post("/settings/logo")
 @login_required
 def save_logo():
@@ -1343,9 +1412,9 @@ def save_logo():
     old_logo = _setting("logo_url", "")
     old_favicon = _setting("favicon_url", "")
     old_share = _setting("default_share_image", "")
-    logo_url = (request.form.get("logo_url", "") or "").strip()
-    favicon_url = (request.form.get("favicon_url", "") or "").strip()
-    default_share_image = (request.form.get("default_share_image", "") or "").strip()
+    logo_url = old_logo
+    favicon_url = old_favicon
+    default_share_image = old_share
     logo_file = request.files.get("logo_file")
     favicon_file = request.files.get("favicon_file")
     share_file = request.files.get("share_image_file")
@@ -1464,9 +1533,7 @@ def ads_new_post():
             flash("Já existe um slot com essa chave.", "danger")
             return render_template("admin/ad_form.html", form=form, mode="new", **_common_admin_context("ads"))
         html = form.html.data or ""
-        img = (form.image_url.data or "").strip()
-        if form.image_file.data:
-            img = _save_upload(form.image_file.data, "ads")
+        img = _save_upload(form.image_file.data, "ads") if form.image_file.data else ""
         link = (form.link_url.data or "").strip() or "#"
         if img:
             html = f'<a href="{link}" target="_blank" rel="noopener"><img src="{img}" alt="" style="max-width:100%;height:auto;display:block;border-radius:10px;"></a>'
@@ -1501,9 +1568,7 @@ def ads_edit_post(slot_id):
         slot.key = form.key.data.strip()
         slot.name = form.name.data.strip()
         html = form.html.data or ""
-        img = (form.image_url.data or "").strip()
-        if form.image_file.data:
-            img = _save_upload(form.image_file.data, "ads")
+        img = _save_upload(form.image_file.data, "ads") if form.image_file.data else ""
         link = (form.link_url.data or "").strip() or "#"
         if img:
             html = f'<a href="{link}" target="_blank" rel="noopener"><img src="{img}" alt="" style="max-width:100%;height:auto;display:block;border-radius:10px;"></a>'

@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from html import unescape, escape
 from pathlib import Path
 import re
@@ -9,6 +10,11 @@ from sqlalchemy import desc, func, or_
 
 from .models import db, Post, Category, AdSlot, SiteSetting, PageView, AnalyticsSession
 from .sync import download_external_image
+
+BRAZIL_TZ = ZoneInfo("America/Sao_Paulo")
+
+def _now_brazil():
+    return datetime.now(BRAZIL_TZ).replace(tzinfo=None)
 
 site_bp = Blueprint("site", __name__)
 
@@ -347,7 +353,7 @@ def _hub_token_is_valid() -> bool:
 
 
 def _published_posts_query():
-    return Post.query.filter(Post.published_at.isnot(None))
+    return Post.query.filter(Post.published_at.isnot(None), Post.published_at <= _now_brazil())
 
 def _track_view(post_id=None):
     try:

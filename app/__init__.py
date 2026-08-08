@@ -28,6 +28,8 @@ def _ensure_schema_updates():
     if inspector.has_table("user"):
         user_columns = {col["name"] for col in inspector.get_columns("user")}
         user_statements = []
+        if "name" not in user_columns:
+            user_statements.append('ALTER TABLE "user" ADD COLUMN name VARCHAR(190)')
         if "is_active" not in user_columns:
             user_statements.append('ALTER TABLE "user" ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE')
         if "created_at" not in user_columns:
@@ -237,12 +239,14 @@ def create_app():
 
         u = User.query.filter_by(email=admin_email).first()
         if not u:
-            u = User(email=admin_email, is_admin=True, is_active=True)
+            u = User(name="Administrador", email=admin_email, is_admin=True, is_active=True)
             u.set_password(admin_password)
             db.session.add(u)
         else:
             u.is_admin = True
             u.is_active = True
+            if not u.name:
+                u.name = "Administrador"
             if not u.password_hash:
                 u.set_password(admin_password)
         db.session.commit()

@@ -14,6 +14,11 @@
 
   <form method="post" class="vstack gap-3">
     <div>
+      <label class="form-label">Nome do usuário</label>
+      <input class="form-control" type="text" name="name" value="{{ request.form.get('name', user_obj.name if user_obj else '') }}" placeholder="Ex.: João da Silva" required>
+      <small class="text-muted">Esse nome aparecerá como autor das matérias publicadas por este usuário.</small>
+    </div>
+    <div>
       <label class="form-label">E-mail</label>
       <input class="form-control" type="email" name="email" value="{{ request.form.get('email', user_obj.email if user_obj else '') }}" required>
     </div>

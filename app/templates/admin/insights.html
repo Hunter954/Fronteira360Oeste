@@ -1,6 +1,6 @@
 {% extends 'admin/layout.html' %}
-{% block admin_title %}Insights{% endblock %}
-{% block page_title %}Insights do site{% endblock %}
+{% block admin_title %}Estatísticas{% endblock %}
+{% block page_title %}Estatísticas do site{% endblock %}
 {% block page_subtitle %}Leitura de performance do período selecionado com visão detalhada de sessões, pageviews e usuários.{% endblock %}
 {% block admin_content %}
 <section class="stats-grid insights-metrics-grid insights-metrics-grid--top">
@@ -22,7 +22,7 @@
   {% endfor %}
 
   <article class="stat-card insights-pageviews-card">
-    <span>Pageviews totais</span>
+    <span>Visualizações totais</span>
     <strong>{{ dashboard_stats.pv_total }}</strong>
     <small>Últimas 24h: {{ dashboard_stats.pv_24h }}</small>
   </article>
