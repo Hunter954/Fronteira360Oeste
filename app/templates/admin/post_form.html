@@ -52,7 +52,7 @@
         <strong>{% if not post or not post.published_at %}Rascunho{% elif post.published_at > now_brazil %}Programada para {{ post.published_at.strftime('%d/%m/%Y %H:%M') }}{% else %}Publicado{% endif %}</strong>
       </div>
       <div><label class="form-label">Categorias</label>{{ form.categories(class='form-select', multiple=true, size='8') }}</div>
-      <div><label class="form-label">Imagem destacada</label>{{ form.featured_image_file(class='form-control') }}<div class="form-help mt-1">Envie a imagem pelo computador. Links de imagem foram removidos.</div></div>
+      <div><label class="form-label">Imagem destacada</label>{{ form.featured_image_file(class='form-control') }}<div class="form-help mt-1">Envie a imagem pelo computador.</div></div>
       {% if post and post.featured_image %}<div class="preview-box"><div class="small text-muted mb-2">Imagem atual</div><img src="{{ post.featured_image }}" alt="Imagem destacada atual"></div>{% endif %}
       <div class="schedule-box js-schedule-box d-none">
         <label class="form-label">Data e horário da publicação</label>
