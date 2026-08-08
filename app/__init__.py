@@ -54,6 +54,8 @@ def _ensure_schema_updates():
             post_statements.append("ALTER TABLE post ADD COLUMN source VARCHAR(30) DEFAULT 'local'")
         if "source_url" not in post_columns:
             post_statements.append('ALTER TABLE post ADD COLUMN source_url VARCHAR(1000)')
+        if "featured_image_credit" not in post_columns:
+            post_statements.append('ALTER TABLE post ADD COLUMN featured_image_credit VARCHAR(255)')
         if post_statements:
             with db.engine.begin() as conn:
                 for stmt in post_statements:

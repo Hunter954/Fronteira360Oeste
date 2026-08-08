@@ -34,4 +34,5 @@ class PostAdminForm(FlaskForm):
     excerpt = TextAreaField("Resumo", validators=[Optional()])
     content_html = TextAreaField("Conteúdo", validators=[Optional()])
     featured_image_file = FileField("Imagem destacada (arquivo)", validators=[Optional(), FileAllowed(["jpg", "jpeg", "png", "webp", "gif", "svg"], "Envie uma imagem válida.")])
+    featured_image_credit = StringField("Crédito da foto de capa", validators=[Optional(), Length(max=255)])
     categories = SelectMultipleField("Categorias", coerce=int, validators=[Optional()])

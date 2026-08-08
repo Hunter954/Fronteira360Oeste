@@ -1,7 +1,7 @@
 {% extends 'admin/layout.html' %}
 {% block admin_title %}{% if mode=='new' %}Nova matéria{% else %}Editar matéria{% endif %}{% endblock %}
 {% block page_title %}{% if mode=='new' %}Nova matéria{% else %}Editar matéria{% endif %}{% endblock %}
-{% block page_subtitle %}Crie, edite, salve como rascunho ou programe a publicação no horário de Brasília.{% endblock %}
+{% block page_subtitle %}Crie, edite, salve como rascunho e escolha a data da publicação no horário de Brasília.{% endblock %}
 {% block admin_content %}
 <form method="post" enctype="multipart/form-data" class="admin-grid-2 js-post-form">
   {{ form.csrf_token }}
@@ -53,18 +53,17 @@
       </div>
       <div><label class="form-label">Categorias</label>{{ form.categories(class='form-select', multiple=true, size='8') }}</div>
       <div><label class="form-label">Imagem destacada</label>{{ form.featured_image_file(class='form-control') }}<div class="form-help mt-1">Envie a imagem pelo computador.</div></div>
+      <div><label class="form-label">Crédito da foto de capa</label>{{ form.featured_image_credit(class='form-control', placeholder='Ex.: João Silva / Agência X') }}<div class="form-help mt-1">Esse nome aparecerá abaixo da foto de capa. Se ficar vazio, será exibido “Divulgação”.</div></div>
       {% if post and post.featured_image %}<div class="preview-box"><div class="small text-muted mb-2">Imagem atual</div><img src="{{ post.featured_image }}" alt="Imagem destacada atual"></div>{% endif %}
-      <div class="schedule-box js-schedule-box d-none">
+      <div class="schedule-box">
         <label class="form-label">Data e horário da publicação</label>
-        <input class="form-control js-scheduled-at" type="datetime-local" name="scheduled_at" min="{{ now_brazil.strftime('%Y-%m-%dT%H:%M') }}" value="{% if post and post.published_at and post.published_at > now_brazil %}{{ post.published_at.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
-        <div class="form-help mt-1">Somente datas e horários futuros são aceitos.</div>
+        <input class="form-control" type="datetime-local" name="published_at" value="{% if post and post.published_at %}{{ post.published_at.strftime('%Y-%m-%dT%H:%M') }}{% else %}{{ now_brazil.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
+        <div class="form-help mt-1">Você pode escolher uma data anterior para publicar retroativamente. Se escolher uma data futura, a matéria ficará programada para esse momento.</div>
       </div>
     </div>
     <div class="d-flex gap-2 mt-4 flex-wrap post-actions">
-      <button class="btn btn-dark" type="submit" name="post_action" value="publish"><i class="bi bi-send me-1"></i>Publicar agora</button>
+      <button class="btn btn-dark" type="submit" name="post_action" value="publish"><i class="bi bi-send me-1"></i>Publicar</button>
       <button class="btn btn-outline-secondary" type="submit" name="post_action" value="draft"><i class="bi bi-file-earmark me-1"></i>Salvar rascunho</button>
-      <button class="btn btn-outline-primary js-schedule-trigger" type="button"><i class="bi bi-clock me-1"></i>Programar</button>
-      <button class="btn btn-primary js-schedule-submit d-none" type="submit" name="post_action" value="schedule"><i class="bi bi-calendar-check me-1"></i>Confirmar programação</button>
       {% if post and post.published_at and post.published_at <= now_brazil %}<a class="btn btn-outline-secondary" href="{{ url_for('site.post', slug=post.slug) }}" target="_blank" rel="noopener">Visualizar</a>{% endif %}
       {% if post %}<button class="btn btn-outline-danger" type="submit" formaction="{{ url_for('admin.posts_delete', post_id=post.id) }}" formmethod="post" onclick="return confirm('Tem certeza que deseja excluir esta matéria?');">Excluir matéria</button>{% endif %}
     </div>
@@ -108,10 +107,6 @@ document.addEventListener('DOMContentLoaded', function(){
     fileInput.value='';
   });
   surface.addEventListener('blur',sync);form.addEventListener('submit',sync);
-  const box=document.querySelector('.js-schedule-box'),trigger=document.querySelector('.js-schedule-trigger'),submit=document.querySelector('.js-schedule-submit'),dateInput=document.querySelector('.js-scheduled-at');
-  const openSchedule=()=>{box.classList.remove('d-none');submit.classList.remove('d-none');trigger.classList.add('d-none');dateInput.required=true;dateInput.focus();};
-  trigger.addEventListener('click',openSchedule);
-  {% if post and post.published_at and post.published_at > now_brazil %}openSchedule();{% endif %}
 });
 </script>
 {% endblock %}

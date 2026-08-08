@@ -683,6 +683,7 @@ def _fill_post_form_from_obj(form: PostAdminForm, post: Post):
     form.title.data = post.title
     form.excerpt.data = post.excerpt
     form.content_html.data = post.content_html
+    form.featured_image_credit.data = post.featured_image_credit
     form.categories.data = [c.id for c in post.categories]
 
 
@@ -728,17 +729,13 @@ def posts_new():
             excerpt=(form.excerpt.data or '').strip() or None,
             content_html=(form.content_html.data or '').strip() or None,
             featured_image=image_url or None,
+            featured_image_credit=(form.featured_image_credit.data or '').strip() or None,
             author_name=(getattr(current_user, 'name', None) or current_user.email),
             updated_at=_now_brazil(),
         )
         if action == 'publish':
-            post.published_at = _now_brazil()
-        elif action == 'schedule':
-            scheduled_at = _parse_schedule_datetime(request.form.get('scheduled_at'))
-            if not scheduled_at or scheduled_at <= _now_brazil():
-                flash('Escolha uma data e horário futuros para programar a matéria.', 'danger')
-                return render_template('admin/post_form.html', form=form, mode='new', post=None, hub=_hub_config(), now_brazil=_now_brazil(), **_common_admin_context('posts'))
-            post.published_at = scheduled_at
+            publish_at = _parse_schedule_datetime(request.form.get('published_at'))
+            post.published_at = publish_at or _now_brazil()
         else:
             post.published_at = None
         selected_ids = form.categories.data or []
@@ -770,18 +767,14 @@ def posts_edit(post_id):
         post.excerpt = (form.excerpt.data or '').strip() or None
         post.content_html = (form.content_html.data or '').strip() or None
         post.featured_image = image_url or None
+        post.featured_image_credit = (form.featured_image_credit.data or '').strip() or None
         if not post.author_name or post.author_name.strip().lower() in {'anônimo', 'anonimo'}:
             post.author_name = (getattr(current_user, 'name', None) or current_user.email)
         post.updated_at = _now_brazil()
         action = (request.form.get('post_action') or 'publish').strip().lower()
         if action == 'publish':
-            post.published_at = _now_brazil()
-        elif action == 'schedule':
-            scheduled_at = _parse_schedule_datetime(request.form.get('scheduled_at'))
-            if not scheduled_at or scheduled_at <= _now_brazil():
-                flash('Escolha uma data e horário futuros para programar a matéria.', 'danger')
-                return render_template('admin/post_form.html', form=form, mode='edit', post=post, hub=_hub_config(), now_brazil=_now_brazil(), **_common_admin_context('posts'))
-            post.published_at = scheduled_at
+            publish_at = _parse_schedule_datetime(request.form.get('published_at'))
+            post.published_at = publish_at or _now_brazil()
         else:
             post.published_at = None
         selected_ids = form.categories.data or []
