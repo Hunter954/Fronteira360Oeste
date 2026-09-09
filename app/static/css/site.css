@@ -53,4 +53,7 @@ body{background:var(--page)}.main-nav,.site-footer{background:var(--surface)}
 .theme-toggle{display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;color:#fff;font:inherit;cursor:pointer;padding:0;white-space:nowrap}.theme-toggle:hover{color:#ffb198}.theme-toggle i{font-size:12px}
 :root[data-theme="dark"] .brand img,:root[data-theme="dark"] .site-footer img{filter:brightness(0) invert(1)}
 :root[data-theme="dark"] .header-ad,:root[data-theme="dark"] .inline-ad,:root[data-theme="dark"] .wide-ad,:root[data-theme="dark"] .sidebar-ad{color:#d8ad7b}
+
+/* Mantém os espaços publicitários da homepage sem fundo quando a arte não ocupa toda a área. */
+.header-ad,.inline-ad,.wide-ad{background:transparent}
 @media(max-width:620px){.utility__actions{gap:10px!important}.theme-toggle span{display:none}.theme-toggle i{font-size:14px}:root[data-theme="dark"] .nav-links{background:var(--surface)!important;border-color:var(--line)!important}}
