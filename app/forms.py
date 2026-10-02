@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileAllowed, FileField
 from wtforms import (
+    DateField,
     StringField,
     PasswordField,
     BooleanField,
@@ -36,3 +37,8 @@ class PostAdminForm(FlaskForm):
     featured_image_file = FileField("Imagem destacada (arquivo)", validators=[Optional(), FileAllowed(["jpg", "jpeg", "png", "webp", "gif", "svg"], "Envie uma imagem válida.")])
     featured_image_credit = StringField("Crédito da foto de capa", validators=[Optional(), Length(max=255)])
     categories = SelectMultipleField("Categorias", coerce=int, validators=[Optional()])
+
+
+class HomeCalendarForm(FlaskForm):
+    home_calendar_enabled = BooleanField("Ativar Calendário Home")
+    home_calendar_date = DateField("Data limite das notícias", validators=[Optional()])

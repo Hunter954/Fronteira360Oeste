@@ -32,3 +32,13 @@ O painel aceita múltiplos banners por posição e faz rotação automática.
 ## Conteúdo inicial
 
 Em uma instalação com banco vazio, o sistema cria automaticamente categorias e matérias iniciais recentes para a home não ficar vazia. Elas podem ser editadas ou removidas normalmente no painel.
+
+## Calendário Home
+
+No painel, abra **Calendário Home** (`/admin/calendario-home`), escolha a data, marque **Ativar Calendário Home** e salve. A home pública inteira passa a selecionar matérias publicadas até o fim desse dia (horário de Brasília), incluindo dias anteriores, da mais recente para a mais antiga. Destaques, últimas notícias e blocos por categoria respeitam o mesmo limite.
+
+Para restaurar a home atual, use **Desativar e voltar às notícias atuais**, ou desmarque a ativação e salve. O controle é exclusivo de administradores e afeta todos os visitantes da home; matérias individuais, busca e páginas de categoria continuam funcionando normalmente.
+
+O calendário filtra as publicações existentes; não restaura versões antigas de textos, banners, layout, cotação ou previsão do tempo. Não exige migração de tabelas: as configurações usam `SiteSetting`, com o recurso desativado por padrão.
+
+Teste de regressão: `python -m unittest discover -s tests -v`.

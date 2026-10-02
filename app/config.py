@@ -1,8 +1,18 @@
 import os
 
+
+def database_uri(url):
+    # SQLAlchemy 2.1 defaults to psycopg 3 for plain PostgreSQL URLs.
+    # This project installs psycopg2-binary; select that driver explicitly.
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg2://" + url[len(prefix):]
+    return url
+
+
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///dev.db")
+    SQLALCHEMY_DATABASE_URI = database_uri(os.getenv("DATABASE_URL", "sqlite:///dev.db"))
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     WP_BASE_URL = os.getenv("WP_BASE_URL", "https://www.paranaatual.com.br").rstrip("/")

@@ -97,6 +97,8 @@ def _ensure_defaults():
 
     for key, value in [
         ("live_embed_html", ""),
+        ("home_calendar_enabled", "0"),
+        ("home_calendar_date", ""),
         ("logo_url", ""),
         ("site_name", os.getenv("SITE_NAME", "Fronteira 360 Oeste")),
         ("favicon_url", ""),
