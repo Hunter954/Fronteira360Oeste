@@ -22,6 +22,7 @@
       </div>
 
       <nav class="admin-nav">
+        <a class="admin-nav-link {% if section=='home_calendar' %}active{% endif %}" href="{{ url_for('admin.home_calendar_page') }}"><i class="bi bi-calendar3-week"></i><span>Calendário Home</span></a>
         <a class="admin-nav-link {% if section=='dashboard' %}active{% endif %}" href="{{ url_for('admin.dashboard') }}"><i class="bi bi-speedometer2"></i><span>Visão geral</span></a>
         <a class="admin-nav-link {% if section=='posts' %}active{% endif %}" href="{{ url_for('admin.posts_list') }}"><i class="bi bi-newspaper"></i><span>Matérias</span></a>
         <a class="admin-nav-link {% if section=='categories' %}active{% endif %}" href="{{ url_for('admin.categories_list') }}"><i class="bi bi-tags"></i><span>Categorias</span></a>
