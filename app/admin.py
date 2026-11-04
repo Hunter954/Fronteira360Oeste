@@ -1,4 +1,8 @@
 import os
+import hmac
+import hashlib
+import hmac
+import hashlib
 import re
 import shutil
 import json
@@ -9,7 +13,7 @@ from pathlib import Path
 from uuid import uuid4
 from urllib.parse import urlparse
 
-from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, abort, jsonify
+from flask import session, Blueprint, render_template, redirect, url_for, request, flash, current_app, abort, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from sqlalchemy import func, desc, or_
 from werkzeug.utils import secure_filename
@@ -838,6 +842,10 @@ def inject_admin_helpers():
     return {"admin_media_root": current_app.config.get("MEDIA_ROOT", "/data/uploads")}
 
 
+from .recovery import register_recovery_routes
+register_recovery_routes(admin_bp, "fronteira360")
+
+
 @admin_bp.get("/login")
 def login():
     form = LoginForm()
@@ -853,7 +861,12 @@ def login_post():
             if not getattr(user, 'is_active', True):
                 flash('Este usuário está desativado. Fale com o administrador.', 'danger')
                 return render_template("admin/login.html", form=form)
+            owner_email = (os.getenv("ADMIN_EMAIL") or "").strip().lower()
+            if not user.whatsapp and user.email != owner_email:
+                flash('Peça ao administrador para cadastrar seu WhatsApp antes de entrar.', 'danger')
+                return render_template("admin/login.html", form=form)
             login_user(user)
+            session["admin_password_stamp"] = hmac.new(current_app.secret_key.encode(), user.password_hash.encode(), hashlib.sha256).hexdigest()
             return redirect(url_for("admin.dashboard"))
         flash("Email ou senha inválidos.", "danger")
     return render_template("admin/login.html", form=form)
@@ -1193,10 +1206,13 @@ def users_new():
         name = (request.form.get('name') or '').strip()
         email = (request.form.get('email') or '').strip().lower()
         password = request.form.get('password') or ''
+        whatsapp = (request.form.get('whatsapp') or '').strip()
         is_admin = bool(request.form.get('is_admin'))
         is_active = bool(request.form.get('is_active'))
 
-        if not name:
+        if whatsapp and not re.fullmatch(r'\+[1-9][0-9]{7,14}', whatsapp):
+            flash('Informe o WhatsApp no formato +5546999999999.', 'danger')
+        elif not name:
             flash('Informe o nome do usuário.', 'danger')
         elif not email:
             flash('Informe o e-mail do usuário.', 'danger')
@@ -1205,7 +1221,7 @@ def users_new():
         elif User.query.filter_by(email=email).first():
             flash('Já existe um usuário com esse e-mail.', 'danger')
         else:
-            user_obj = User(name=name, email=email, is_admin=is_admin, is_active=is_active)
+            user_obj = User(name=name, email=email, whatsapp=whatsapp or None, is_admin=is_admin, is_active=is_active)
             user_obj.set_password(password)
             db.session.add(user_obj)
             db.session.commit()
@@ -1226,10 +1242,13 @@ def users_edit(user_id):
         name = (request.form.get('name') or '').strip()
         email = (request.form.get('email') or '').strip().lower()
         password = request.form.get('password') or ''
+        whatsapp = (request.form.get('whatsapp') or '').strip()
         is_admin = bool(request.form.get('is_admin'))
         is_active = bool(request.form.get('is_active'))
 
-        if not name:
+        if whatsapp and not re.fullmatch(r'\+[1-9][0-9]{7,14}', whatsapp):
+            flash('Informe o WhatsApp no formato +5546999999999.', 'danger')
+        elif not name:
             flash('Informe o nome do usuário.', 'danger')
         elif not email:
             flash('Informe o e-mail do usuário.', 'danger')
@@ -1240,6 +1259,7 @@ def users_edit(user_id):
         elif user_obj.id == current_user.id and not is_active:
             flash('Você não pode desativar seu próprio usuário.', 'danger')
         else:
+            user_obj.whatsapp = whatsapp or None
             user_obj.name = name
             user_obj.email = email
             user_obj.is_admin = is_admin
